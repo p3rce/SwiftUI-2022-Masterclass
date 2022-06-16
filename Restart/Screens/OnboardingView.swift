@@ -14,7 +14,7 @@ struct OnboardingView: View {
     //This true value will only be added to the property when the program cannot find the "onboarding" key previously set in the device's permanent storage. When the running program finds the previously created "onboarding" key, it will ignore the value set (right part after the equals sign) no matter what is there.
     @AppStorage("onboarding") var isOnBoardingViewActive: Bool = true
     
-    //Screen width - 80 points (40p oints on left and 40 points on right)
+    //Screen width minus 80 points (40p points on left and 40 points on right)
     @State private var buttonWidth: Double = UIScreen.main.bounds.width - 80
     
     //Repersent offset value in horizontal direction. Btn has two states (active when dragging, idle state when inactive). That's why we init this with offset value of 0.
@@ -22,6 +22,19 @@ struct OnboardingView: View {
     
     //A property to control the animation. If true start animation, else do not start animation
     @State private var isAnimating: Bool = false
+    
+    //Store where the image is being tilted using CGSize. Default it to 0 because nothing is moving
+    @State private var imageOffset: CGSize = CGSize(width: 0, height: 0)
+    
+    //Store what the left right indicator opacity is. By default, when it appears it will be fully visible. We will change this as needed
+    @State private var indicatorOpacity: Double = 1.0
+    
+    //Store the current title on the OnboardingView
+    @State private var textTitle: String = "Share."
+    
+    //Use this property to trigger a notification feedback
+    let hapticFeedback = UINotificationFeedbackGenerator()
+
     
     //MARK: - Body
     var body: some View {
@@ -38,10 +51,12 @@ struct OnboardingView: View {
                 
                 VStack(spacing: 0) {
                     
-                    Text("Share.")
+                    Text(textTitle)
                         .font(.system(size: 60))
                         .fontWeight(.heavy)
                         .foregroundColor(.white)
+                        .transition(.opacity)
+                        .id(textTitle) //Created a unique identification for the textView. When users start dragging, we change this ID to another one. We use the ID method to tell SwiftUi that a view is NO LONGER the same view.
                     
                     Text("""
                         It's not how much we give but
@@ -66,14 +81,73 @@ struct OnboardingView: View {
                 ZStack {
                     
                     CircleGroupView(ShapeColor: .white, ShapeOpacity: 0.2)
+                        //Since we want to move ring in opposite direction of the dragging, we made the offset value the opposite (negative)
+                        .offset(x: imageOffset.width * -1)
+                        .blur(radius: abs(imageOffset.width / 5))
+                        .animation(.easeOut(duration: 1), value: imageOffset)
                     
                     Image("character-1")
                         .resizable()
                         .scaledToFit()
                         .opacity(isAnimating ? 1 : 0)
                         .animation(.easeOut(duration: 0.5), value: isAnimating)
+                        .offset(x: imageOffset.width * 1.3, y: 0)
+                        //Angle Parameter (.degrees) and Anchor Parameter (the center point id the default). We use a dynamic value (imageOffset.width) to achieve this
+                        .rotationEffect(.degrees(Double(imageOffset.width / 20)))
+                        .gesture(
+                        
+                            DragGesture()
+                                .onChanged({ gesture in
+                                    
+                                    //Convert image offset to positive value (Absolute value). Want to stop dragging feature at 150 points.
+                                    if abs(imageOffset.width) <= 150 {
+                                        imageOffset = gesture.translation
+                                        
+                                        withAnimation(.linear(duration: 0.25)) {
+                                            indicatorOpacity = 0
+                                            
+                                            //Change text title when image is moved
+                                            textTitle = "Give."
+                                            
+                                        }
+                                        
+                                        
+                                    }
+                                    
+                                    
+                                    
+                                })
+                            
+                                .onEnded({ _ in
+                                    
+                                    imageOffset = CGSize(width: 0, height: 0)
+                                    
+                                    withAnimation(.linear(duration: 1)) {
+                                        indicatorOpacity = 1
+                                        
+                                        //Change text title back when image is done moving
+                                        textTitle = "Share."
+                                    }
+                                    
+                                })
+                        
+                        ) //End Gesture
+                        .animation(.easeOut(duration: 0.5), value: imageOffset)
                     
                 } //End ZStack
+                .overlay(
+                    Image(systemName: "arrow.left.and.right.circle")
+                        .font(.system(size: 44, weight: .ultraLight))
+                        .foregroundColor(.white)
+                        .offset(y: 20)
+                        .opacity(isAnimating ? 1 : 0)
+                        .animation(.easeOut(duration: 1).delay(0.50), value: isAnimating)
+                        .opacity(indicatorOpacity)
+                    , alignment: .bottom
+                
+                )
+                
+                
                 
                 Spacer()
                 
@@ -146,9 +220,14 @@ struct OnboardingView: View {
                                         
                                         //If button is dragged 50% or more, snap to right edge and show HomeScreen. Else, snap to left edge and return buttonOffset to 0.
                                         if buttonOffset > buttonWidth / 2 {
+                                            
+                                            hapticFeedback.notificationOccurred(.success)
+                                            playSound(sound: "chimeup", type: "mp3")
                                             buttonOffset = buttonWidth - 80
                                             isOnBoardingViewActive = false
+                                            
                                         } else {
+                                            hapticFeedback.notificationOccurred(.warning)
                                             buttonOffset = 0
                                         }
                                         
@@ -176,6 +255,7 @@ struct OnboardingView: View {
         .onAppear {
             isAnimating = true
         }
+        .preferredColorScheme(.dark)
     }
 }
 
