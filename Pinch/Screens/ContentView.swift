@@ -37,6 +37,8 @@ struct ContentView: View {
             
             ZStack {
                 
+                Color.clear
+                
                 //MARK: - Page Image
                 Image("magazine-front-cover")
                     .resizable()
@@ -87,7 +89,7 @@ struct ContentView: View {
                                 //Image is scaled out and we need to snap it back
                                 if imageScale <= 1 {
                                     
-                                    resetImageState() 
+                                    resetImageState()
                                     
                                 }
                                 
@@ -99,12 +101,26 @@ struct ContentView: View {
                 
                 
                 
+                //MARK: - Long Press Gesture
+                
+                
+                
             } //End ZStack
             .navigationTitle("Pinch & Zoom")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 isAnimating = true
             }
+            
+            //MARK: - Info Panel
+            .overlay(
+            
+                InfoPanelView(scale: imageScale, offset: imageOffset)
+                    .padding(.horizontal)
+                    .padding(.top, 30)
+                ,alignment: .top
+            
+            )
             
         } //End NavigationView
         .navigationViewStyle(.stack)
