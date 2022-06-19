@@ -20,6 +20,13 @@ struct ContentView: View {
     //Store where the image is. We start off at 0, but as users drag and move, we need to update this with the vector coordinates (note the CGSize width and height can be positive or negative)
     @State private var imageOffset: CGSize = CGSize(width: 0, height: 0)
     
+    //Store if the side drawer is open or not
+    @State private var isDrawerOpen: Bool = false
+    
+    let pages: [Page] = pagesData
+    
+    @State private var pageIndex: Int = 1
+    
     //MARK: - Functions
     func resetImageState() {
         
@@ -28,6 +35,10 @@ struct ContentView: View {
             imageOffset = CGSize(width: 0, height: 0)
         }
         
+    }
+    
+    func currentPage() -> String {
+        return pages[pageIndex - 1].imageName
     }
     
     //MARK: - Body
@@ -40,7 +51,7 @@ struct ContentView: View {
                 Color.clear
                 
                 //MARK: - Page Image
-                Image("magazine-front-cover")
+                Image(currentPage())
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .cornerRadius(10)
@@ -165,6 +176,8 @@ struct ContentView: View {
                         
                         //Scale Down
                         
+                        
+                        
                         Button {
                             
                             withAnimation(.spring()) {
@@ -229,6 +242,62 @@ struct ContentView: View {
                 , alignment: .bottom
             
             )
+            
+            //MARK: - Drawer
+            .overlay(
+            
+                HStack(spacing: 12) {
+                    
+                    //MARK: - Drawer Handle
+                    
+                    Image(systemName: isDrawerOpen ? "chevron.compact.right" : "chevron.compact.left")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 40)
+                        .padding(8)
+                        .foregroundStyle(.secondary)
+                        .onTapGesture {
+                            withAnimation(.easeOut) {
+                                isDrawerOpen.toggle()
+                            }
+                        }
+                    
+                    //MARK: - Thumbnails
+                    
+                    ForEach(pages) { item in
+                        
+                        Image(item.thumbnailName)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 80)
+                            .cornerRadius(8)
+                            .shadow(radius: 4)
+                            .opacity(isDrawerOpen ? 1 : 0)
+                            .animation(.easeOut(duration: 0.5), value: isDrawerOpen)
+                            .onTapGesture {
+                                
+                                isAnimating = true
+                                pageIndex = item.id
+                                
+                            }
+                        
+                    }
+                    
+                    Spacer()
+                    
+                } //End Drawer
+                    .padding(EdgeInsets(top: 16, leading: 8, bottom: 16, trailing: 8))
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(12)
+                    .opacity(isAnimating ? 1 : 0)
+                    .frame(width: 260)
+                    //Grab the height (varies on device) on screen and divide by number to change where it is (we want it higher)
+                    .padding(.top, UIScreen.main.bounds.height / 12)
+                    .offset(x: isDrawerOpen ? 20 : 215)
+                    ,alignment: .topTrailing
+                
+            )
+            
             
         } //End NavigationView
         .navigationViewStyle(.stack)
