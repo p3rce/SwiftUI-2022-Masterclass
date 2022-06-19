@@ -122,6 +122,79 @@ struct ContentView: View {
             
             )
             
+            //MARK: - Controls
+            .overlay(
+            
+                Group {
+                    HStack {
+                        
+                        //Scale Down
+                        
+                        Button {
+                            
+                            withAnimation(.spring()) {
+                                
+                                //We only scale down the image by 1 when the value of the imageScale is more then one
+                                if imageScale > 1 {
+                                    imageScale -= 1
+                                    
+                                    
+                                    //Image scale is less than or equal to one, so instead of scaling out again, just reset back to default view (Safety precaution)
+                                    if imageScale <= 1 {
+                                        resetImageState()
+                                    }
+                                    
+                                }
+                            }
+                            
+                        } label: {
+                            ControlImageView(icon: "minus.magnifyingglass")
+                        }
+                        
+                        //Reset
+                        
+                        Button {
+                            
+                            resetImageState()
+                            
+                        } label: {
+                            ControlImageView(icon: "arrow.up.left.and.down.right.magnifyingglass")
+                        }
+                        
+                        
+                        //Scale Up
+                        
+                        Button {
+                            
+                            withAnimation(.spring()) {
+                                
+                                //We only scale up the image by 1 if the imageScale property is less than 5.
+                                if imageScale < 5 {
+                                    imageScale += 1
+                                    
+                                    //Make sure that the image scale will never pass 5 in scalling up
+                                    if imageScale > 5 {
+                                        imageScale = 5
+                                    }
+                                }
+                                
+                            }
+                            
+                        } label: {
+                            ControlImageView(icon: "plus.magnifyingglass")
+                        }
+                        
+                    } //End Controls
+                    .padding(EdgeInsets(top: 12, leading: 20, bottom: 12, trailing: 20))
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(12)
+                    .opacity(isAnimating ? 1 : 0)
+                }
+                    .padding(.bottom, 30)
+                , alignment: .bottom
+            
+            )
+            
         } //End NavigationView
         .navigationViewStyle(.stack)
         
